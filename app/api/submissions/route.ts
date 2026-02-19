@@ -1,7 +1,4 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { writeFile, mkdir } from "fs/promises";
-import path from "path";
-import { v4 as uuidv4 } from "uuid";
 import { connectToDatabase } from "@/lib/db";
 import { requireAuth, AuthError } from "@/lib/auth";
 import Submission from "@/lib/models/submission";
@@ -14,7 +11,7 @@ const ALLOWED_IMAGE_TYPES = [
   "image/webp",
   "image/svg+xml",
 ];
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB (base64 adds ~33%, so ~6.7MB stored in MongoDB, under the 16MB doc limit)
 
 export async function POST(request: NextRequest) {
   try {
@@ -87,20 +84,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Save the uploaded image
-    const ext = path.extname(imageFile.name) || ".png";
-    const uniqueFilename = `${uuidv4()}${ext}`;
-    const uploadDir = path.join(process.cwd(), "public", "uploads");
-
-    // Ensure uploads directory exists
-    await mkdir(uploadDir, { recursive: true });
-
-    const filePath = path.join(uploadDir, uniqueFilename);
+    // Convert image to base64 data URL.
+    // Vercel's serverless filesystem is read-only, so we cannot write to disk.
+    // Storing as a data URL in MongoDB avoids any filesystem dependency.
     const bytes = await imageFile.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-    await writeFile(filePath, buffer);
-
-    const imagePath = `/uploads/${uniqueFilename}`;
+    const base64 = Buffer.from(bytes).toString("base64");
+    const imageDataUrl = `data:${imageFile.type};base64,${base64}`;
 
     // Create submission
     const submission = await Submission.create({
@@ -109,7 +98,7 @@ export async function POST(request: NextRequest) {
       imageName: parsed.data.imageName,
       teamName: parsed.data.teamName,
       prompt: parsed.data.prompt,
-      imagePath,
+      imagePath: imageDataUrl,
     });
 
     return NextResponse.json(
