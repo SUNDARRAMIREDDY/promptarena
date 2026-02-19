@@ -13,12 +13,7 @@ export const metadata: Metadata = {
   description:
     "A prompt engineering competition platform. View the target image in the lab, craft your best AI prompt to recreate it, and submit your result.",
   icons: {
-    icon: [
-      {
-        url: "/icon.svg",
-        type: "image/svg+xml",
-      },
-    ],
+    icon: "/favicon.ico",
   },
 };
 
