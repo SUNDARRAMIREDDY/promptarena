@@ -137,11 +137,7 @@ export async function POST(request: NextRequest) {
     }
     console.error("Submission error:", error);
     return NextResponse.json(
-      {
-        error: "Internal server error",
-        message: error instanceof Error ? error.message : String(error),
-        stack: error instanceof Error ? error.stack : undefined
-      },
+      { error: "Internal server error" },
       { status: 500 }
     );
   }
@@ -177,11 +173,7 @@ export async function GET(request: NextRequest) {
     }
     console.error("Get submissions error:", error);
     return NextResponse.json(
-      {
-        error: "Internal server error",
-        message: error instanceof Error ? error.message : String(error),
-        stack: error instanceof Error ? error.stack : undefined
-      },
+      { error: "Internal server error" },
       { status: 500 }
     );
   }
