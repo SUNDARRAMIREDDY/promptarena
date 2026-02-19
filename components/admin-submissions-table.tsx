@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -176,6 +177,9 @@ export function AdminSubmissionsTable({
         <DialogContent className="sm:max-w-xl">
           <DialogHeader>
             <DialogTitle className="text-card-foreground">{previewImage?.name}</DialogTitle>
+            <DialogDescription className="sr-only">
+              Preview of the submitted image for {previewImage?.name}
+            </DialogDescription>
           </DialogHeader>
           {previewImage && (
             /* eslint-disable-next-line @next/next/no-img-element */
