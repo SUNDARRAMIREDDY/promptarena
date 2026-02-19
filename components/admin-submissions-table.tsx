@@ -10,20 +10,35 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import type { AdminSubmissionData } from "@/lib/api-client";
-import { Trophy, Medal, Award, FileImage, ImageIcon } from "lucide-react";
+import { apiDeleteSubmission } from "@/lib/api-client";
+import { Trophy, Medal, Award, FileImage, ImageIcon, Trash2, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 interface AdminSubmissionsTableProps {
   submissions: Record<number, AdminSubmissionData[]>;
   isLoading: boolean;
+  onDeleted?: () => void;
 }
 
 function getRankIcon(rank: number) {
@@ -42,11 +57,29 @@ function getRankLabel(rank: number): string {
 export function AdminSubmissionsTable({
   submissions,
   isLoading,
+  onDeleted,
 }: AdminSubmissionsTableProps) {
   const [previewImage, setPreviewImage] = useState<{
     src: string;
     name: string;
   } | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<AdminSubmissionData | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  async function handleConfirmDelete() {
+    if (!deleteTarget) return;
+    setIsDeleting(true);
+    const res = await apiDeleteSubmission(deleteTarget.id);
+    setIsDeleting(false);
+    setDeleteTarget(null);
+
+    if (res.error) {
+      toast.error(`Delete failed: ${res.error}`);
+    } else {
+      toast.success(`Submission by ${deleteTarget.userName} deleted.`);
+      onDeleted?.();
+    }
+  }
 
   if (isLoading) {
     return (
@@ -103,6 +136,7 @@ export function AdminSubmissionsTable({
                       <TableHead>Prompt</TableHead>
                       <TableHead>Image</TableHead>
                       <TableHead>Submitted At</TableHead>
+                      <TableHead className="w-16 text-center">Delete</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -159,6 +193,15 @@ export function AdminSubmissionsTable({
                             }
                           )}
                         </TableCell>
+                        <TableCell className="text-center">
+                          <button
+                            onClick={() => setDeleteTarget(sub)}
+                            className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive mx-auto"
+                            aria-label={`Delete submission by ${sub.userName}`}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -191,6 +234,40 @@ export function AdminSubmissionsTable({
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Submission?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete the Round {deleteTarget?.roundNumber} submission
+              by <strong>{deleteTarget?.userName}</strong> ({deleteTarget?.userEmail}).
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                "Delete"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

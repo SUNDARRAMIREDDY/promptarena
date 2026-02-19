@@ -72,3 +72,44 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+
+export async function DELETE(request: NextRequest) {
+  try {
+    await requireAdmin(request);
+
+    const { searchParams } = new URL(request.url);
+    const submissionId = searchParams.get("id");
+
+    if (!submissionId) {
+      return NextResponse.json(
+        { error: "Submission ID is required" },
+        { status: 400 }
+      );
+    }
+
+    await connectToDatabase();
+
+    const deleted = await Submission.findByIdAndDelete(submissionId);
+
+    if (!deleted) {
+      return NextResponse.json(
+        { error: "Submission not found" },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({ message: "Submission deleted successfully" });
+  } catch (error) {
+    if (error instanceof AuthError) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.status }
+      );
+    }
+    console.error("Delete submission error:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}

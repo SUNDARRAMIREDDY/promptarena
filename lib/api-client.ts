@@ -125,6 +125,14 @@ export async function apiGetAllSubmissions() {
   }>(res);
 }
 
+export async function apiDeleteSubmission(id: string) {
+  const res = await fetch(`${API_BASE}/api/admin/submissions?id=${encodeURIComponent(id)}`, {
+    method: "DELETE",
+    headers: authHeaders(),
+  });
+  return handleResponse<{ message: string }>(res);
+}
+
 // Types
 export interface UserData {
   id: string;

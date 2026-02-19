@@ -141,6 +141,7 @@ function AdminDashboardContent() {
             <AdminSubmissionsTable
               submissions={submissions}
               isLoading={isLoadingSubmissions}
+              onDeleted={fetchData}
             />
           </TabsContent>
 
